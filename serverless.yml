@@ -1,0 +1,20 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: vineethramesh
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: namematcher
+service: namematcher
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+
+functions:
+  helloWorldFunction:
+    handler: index.handler
+    name: namematcher
+    events:
+      - http:
+          path: matcher
+          method: get
+   
+

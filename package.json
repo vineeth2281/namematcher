@@ -1,0 +1,17 @@
+{
+  "name": "namematcher",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vineeth Ramesh",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "string-similarity": "^4.0.4"
+  },
+  "devDependencies": {
+    "@types/string-similarity": "^4.0.2"
+  }
+}
