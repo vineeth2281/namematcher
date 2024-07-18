@@ -1,5 +1,14 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const stringSimilarity = require('string-similarity');
 
+
+const apiKey = process.env.API_KEY;
+
+
+const genAI = new GoogleGenerativeAI(apiKey);
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const prompt = "Extract name and normalize it to english from the following: ";
 const namesList = [
     'David Smith 大卫 斯密斯',
     'Yueling Zhang 月林张',
@@ -9,51 +18,56 @@ const namesList = [
 ];
 
 export const handler: APIGatewayProxyHandler = async (event) => {
-    const inputName = event.queryStringParameters?.name || '';
+const inputName = event.queryStringParameters?.name || '';
 
-    if (!inputName.trim()) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Input name cannot be empty or null',
-            }),
-        };
-    }
-
-    const bestMatch = findBestMatch(inputName, namesList);
-
-    if (!bestMatch) {
-        return {
-            statusCode: 404,
-            body: JSON.stringify({
-                message: 'Match not found',
-            }),
-        };
-    }
-
+if (!inputName.trim()) {
     return {
-        statusCode: 200,
+        statusCode: 400,
         body: JSON.stringify({
-            message: 'Ready to match',
-            input: inputName,
-            match: bestMatch
+            message: 'Input name cannot be empty or null',
         }),
     };
+}
+
+const fullPrompt = `${prompt}${inputName}`;
+
+const result = await model.generateContent(fullPrompt);
+const response = await result.response; 
+const text = response.text();
+const bestMatch = findBestMatch(text, namesList);
+
+if (!bestMatch) {
+    return {
+        statusCode: 404,
+        body: JSON.stringify({
+            message: 'Match not found',
+        }),
+    };
+}
+
+return {
+    statusCode: 200,
+    body: JSON.stringify({
+        message: 'Match found !',      
+        inputName: inputName,         
+        bestmatch: bestMatch            
+    }),
+};
+
+    
 };
 
 function findBestMatch(input: string, names: string[]): string | null {
-    const inputParts = input.trim().toLowerCase().split(/\s+/).sort();
-    let bestMatch: string | null = null;
-    let bestMatchScore = -1;
+    const inputNormalized = input.trim().toLowerCase();
+    const matches = names.map(name => {
+        const nameNormalized = name.trim().toLowerCase();
+        const similarity = stringSimilarity.compareTwoStrings(inputNormalized, nameNormalized);
+        return { name, similarity };
+    });
+    matches.sort((a, b) => b.similarity - a.similarity);
 
-    for (const name of names) {
-        const nameParts = name.trim().toLowerCase().split(/\s+/).sort();
-        
-        // Check if all input parts match at least one name part
-        if (inputParts.every(part => nameParts.some(namePart => namePart.includes(part)))) {
-            return name; // Return the first matching name
-        }
-    }
-
-    return null; // Return null if no match found
+    return matches.length > 0 ? matches[0].name : null;
 }
+
+
+
