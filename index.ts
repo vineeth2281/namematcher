@@ -57,7 +57,7 @@ return {
     
 };
 
-function findBestMatch(input: string, names: string[]): string | null {
+function findBestMatch(input: string, names: string[], threshold = 0.5): string | null {
     const inputNormalized = input.trim().toLowerCase();
     const matches = names.map(name => {
         const nameNormalized = name.trim().toLowerCase();
@@ -66,8 +66,10 @@ function findBestMatch(input: string, names: string[]): string | null {
     });
     matches.sort((a, b) => b.similarity - a.similarity);
 
-    return matches.length > 0 ? matches[0].name : null;
+    if (matches.length > 0 && matches[0].similarity >= threshold) {
+        return matches[0].name;
+    } else {
+        return null;
+    }
 }
-
-
 
